@@ -23,4 +23,7 @@ jobs:
       - name: Build Application
         uses: mvn clean package
 
+      - name: Build Application
+        uses: mvn clean package
+
         
