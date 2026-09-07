@@ -101,7 +101,7 @@ jobs:
           
       - name: Deployment On kubernetes
         run: |
-          kubectl apply -f k8s/
+          kubectl apply -f k8s/          
           sleep 30
           kubectl get pods 
           kubectl get svc -o wide  
