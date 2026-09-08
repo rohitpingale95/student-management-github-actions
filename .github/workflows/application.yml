@@ -28,10 +28,10 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-2
+          aws-region: ap-south-1
           
       - name: Push Artifact to S3
-        run: aws s3 cp target/*.war s3://rohitptech.online/student.war  
+        run: aws s3 cp target/*.war s3://rohitptech.online/student.war
 
       - name: SonarQube Analysis 
         env:
@@ -40,7 +40,7 @@ jobs:
         run: |
           mvn sonar:sonar \
             -Dsonar.token="$SONAR_TOKEN" \
-            -Dsonar.host.url="$SONAR_HOST_URL"  
+            -Dsonar.host.url="$SONAR_HOST_URL"
 
       - name: SonarQube Quality Gates
         run: |
@@ -48,12 +48,12 @@ jobs:
             "${{ secrets.SONAR_HOST_URL }}/api/qualitygates/project_status?projectKey=com.school:student-management" \
             | jq -r '.projectStatus.status')
           echo "Quality Gate: $STATUS"
-          [ "$STATUS" = "OK" ] || exit 1   
+          [ "$STATUS" = "OK" ] || exit 1
 
       - name: Docker Build 
         run: | 
           docker build -t student . 
-          docker images    
+          docker images
 
       - name: Trivy Install 
         run: |
@@ -89,7 +89,7 @@ jobs:
         run: terraform validate
 
       - name: Terraform apply 
-        run: terraform destroy -auto-approve
+        run: terraform apply -auto-approve
 
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
@@ -101,7 +101,8 @@ jobs:
           
       - name: Deployment On kubernetes
         run: |
-          kubectl apply -f k8s/          
+          kubectl apply -f k8s/
           sleep 30
           kubectl get pods 
-          kubectl get svc -o wide  
+          kubectl get svc -o wide 
+      
