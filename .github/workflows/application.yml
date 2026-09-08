@@ -1,9 +1,14 @@
 name: CI/CD using Github Actions
 
 on: 
-  push:
+  push: 
     branches:
-      - master
+      - master 
+    paths-ignore:
+      - '*.tf'
+      - '.github/workflows/infrastructure.yml'
+
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,25 +18,25 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v5
 
-      - name: setup java
+      - name: Setup Java
         uses: actions/setup-java@v5
         with:
-          distribution: temurin
+          distribution: temurin 
           java-version: '21'
           cache: maven
-          
+
       - name: Build Application
         run: mvn clean package
 
-      - name: Configure aws Credentials
+      - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
-          
-      - name: Push Artifact to S3
-        run: aws s3 cp target/*.war s3://rohitptech.online/student.war
+
+      - name: Push Artifacts to S3
+        run: aws s3 cp target/*.war s3://rohitptech.online
 
       - name: SonarQube Analysis 
         env:
@@ -50,9 +55,9 @@ jobs:
           echo "Quality Gate: $STATUS"
           [ "$STATUS" = "OK" ] || exit 1
 
-      - name: Docker Build 
-        run: | 
-          docker build -t student . 
+      - name: Docker Build
+        run: |
+          docker build -t student .
           docker images
 
       - name: Trivy Install 
@@ -67,43 +72,28 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y trivy
 
-      - name: Scan image using Trivy
+
+      - name: Scann image using Trivy
         run: trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 0 student:latest
 
-      - name: Push image to ECR
+      - name: Push to ECR
         run: |
           aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 867418408476.dkr.ecr.ap-south-1.amazonaws.com
           docker tag student:latest 867418408476.dkr.ecr.ap-south-1.amazonaws.com/student:latest
           docker push 867418408476.dkr.ecr.ap-south-1.amazonaws.com/student:latest
 
-      - name: Setup Terraform 
-        uses: hashicorp/setup-terraform@v4
-
-      - name: Terraform init
-        run: terraform init
-
-      - name: Terraform fmt 
-        run: terraform fmt
-
-      - name: Terraform validate
-        run: terraform validate
-
-      - name: Terraform apply 
-        run: terraform apply -auto-approve
-
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v4
+      - name: Install Kubectl
+        uses: azure/setup-kubectl@v5
         with:
           version: latest
 
-      - name: Configure EKS cluster 
+      - name: Configure EKS cluster
         run: aws eks update-kubeconfig --name my-eks-cluster --region ap-south-1
-          
-      - name: Deployment On kubernetes
+
+      - name: Deployment on kubernetes
         run: |
           kubectl apply -f k8s/
+          kubectl get pods
           sleep 30
           kubectl get pods 
-          kubectl get svc -o wide 
-      
-
+          kubectl get svc -o wide
